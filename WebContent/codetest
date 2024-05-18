@@ -1,0 +1,18 @@
+<select id="originSelect" onchange="showProductsByOrigin(this.value)">
+			        <option value="-1">All Origins</option>
+			        <% 
+			        
+			        Collections.sort(origins, new Comparator<Origin>() {
+			            @Override
+			            public int compare(Origin o1, Origin o2) {
+			                return o2.getPopularity() - o1.getPopularity();
+			            }
+			        });
+			        
+			        for (Origin origin : origins) {
+			        %>
+			        <option value="<%= origin.getName() %>"><%= origin.getName() %></option>
+			        <%
+			        }
+			        %>
+    			</select>// thêm xuất xứ

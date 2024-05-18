@@ -1,0 +1,491 @@
+
+<%@page import="cn.techtutorial.connection.DbCon"%>
+<%@page import="cn.techtutorial.dao.ProductDao"%>
+<%@page import="cn.techtutorial.dao.CategoryDao"%>
+<%@page import="cn.techtutorial.model.*"%>
+<%@page import="java.util.*"%>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+	pageEncoding="ISO-8859-1"%>
+
+<%    
+    
+User auth = (User) request.getSession().getAttribute("auth");
+if (auth != null) {
+    request.setAttribute("person", auth);
+}
+ProductDao pd = new ProductDao(DbCon.getConnection());
+List<Product> products = pd.getAllProducts();
+ArrayList<Cart> cart_list = (ArrayList<Cart>) session.getAttribute("cart-list");
+if (cart_list != null) {
+	request.setAttribute("cart_list", cart_list);
+}
+
+CategoryDao categoryDao = new CategoryDao(DbCon.getConnection());
+List<Category> categories = categoryDao.getAllCategories();
+request.setAttribute("categories", categories);
+
+
+%>
+
+<%
+String selectedCategory = request.getParameter("category");
+
+if (selectedCategory != null && !selectedCategory.isEmpty() && selectedCategory != "All Products") {
+    products = pd.getProductsByCategory(selectedCategory);
+    request.setAttribute("selectedCategory", selectedCategory);
+} else {
+    products = pd.getAllProducts();
+    request.setAttribute("selectedCategory", "All Products");
+    selectedCategory = "All Products";
+}
+%>
+
+
+<script>
+    function showProductsByCategory(category) {
+        window.location.href = 'your-products-page.jsp?category=' + encodeURIComponent(category);
+    }
+</script>
+
+
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+
+	.card-header {
+	  display: flex;
+	  justify-content: space-between; 
+	
+	}
+	header {
+	  justify-content: space-between;
+	  
+	  position: sticky;
+	  top: 0;
+	  z-index: 9999;
+		html {
+		  font-size: 62.5%;
+		  scroll-behavior: smooth;
+		}
+	}
+	body{
+		background: #99FF99;
+	}
+	.side-left img {
+	    width: 350px;
+	    height: 30%;
+	    border-radius: 10px; /* Optional: to add rounded corners */
+	    justify-content: space-between;
+	  
+		position: sticky;
+		top: 250;
+		z-index: 9999;
+		html {
+		  font-size: 62.5%;
+		  scroll-behavior: smooth;
+		}
+	}
+	.side-right img {
+	    width: 350;
+	    height: 30%;
+	    border-radius: 10px; /* Optional: to add rounded corners */
+	    justify-content: space-between;
+	  
+		position: sticky;
+		top: 250;
+		z-index: 9999;
+		html {
+		  font-size: 62.5%;
+		  scroll-behavior: smooth;
+		}
+	}
+	.main-container {
+		background: #EEEEEE;
+	    display: flex;
+	    justify-content: center;
+	}
+</style>
+<%@include file="/includes/head.jsp"%>
+<title>Fruitopia</title>
+
+</head>
+<body>
+	<header>
+		<%@include file="/includes/navbar.jsp"%>
+	</header>
+   
+
+	
+<div class="main-container">
+	<div class="side-left">
+        <img src="design-image/sideleft.jpg" alt="Side Image 1">
+    </div>
+	<div class="container">
+            <div class="card-header my-3"  style="background-color:#DDDDDD;">
+                <label for="categorySelect">Select Category: </label>
+                <select id="categorySelect" onchange="showProductsByCategory(this.value)">
+                <option value="-1">All Products</option>
+                <% 
+                for (Category category : categories) {
+                %>
+                <option value="<%= category.getCategoryName() %>" 
+                    <% if (category.getCategoryName().equals(selectedCategory)) { %>
+                        selected
+                    <% } %>
+                ><%= category.getCategoryName() %></option>
+                <%
+                }
+                %>
+            	</select>
+            	<label for="originSelect">Select Origin: </label>
+			    <select id="originSelect" onchange="showProductsByOrigin(this.value)">
+			        <option value="-1">All Origins</option>
+			        
+    			</select>
+    			<label for="seasonSelect">Select Season: </label>
+				    <select id="seasonSelect" onchange="showProductsBySeason(this.value)">
+				        <option value="-1">All Seasons</option>
+				        <option value="Spring">Spring</option>
+				        <option value="Summer">Summer</option>
+				        <option value="Autumn">Autumn</option>
+				        <option value="Winter">Winter</option>
+				    </select>
+    			<label for="likedProduct">Liked Product: </label>
+			    <select id="likedProduct" onchange="showProductsByLike(this.value)">
+			        <option value="-1">None</option>
+			        <option value="Increase">Increase</option>
+			        <option value="Decrease">Decrease</option>
+			    </select>
+            </div>
+                <h3><%= selectedCategory %></h3>
+		<div class="row">
+			<%
+			if (!products.isEmpty()) {
+				for (Product p : products) {
+			%>
+			<div class="col-md-3 my-3">
+				<div class="card w-100">
+					<img class="card-img-top " width = 300 height = 200 src="product-image/<%=p.getImage() %>"
+						alt="Card image cap">
+					<div class="card-body">
+						<h5 class="card-title"><%=p.getName() %></h5>
+						<h6 class="price">Price: $<%=p.getPrice() %></h6>
+						<h6 class="category">Category: <%=p.getCategory() %></h6>
+						<div class="mt-3 d-flex justify-content-between">
+							<a class="btn btn-dark" href="add-to-cart?id=<%=p.getId()%>">Add to Cart</a> <a
+								class="btn btn-primary" href="order-now?quantity=1&id=<%=p.getId()%>">Buy Now</a>
+						</div>
+					</div>
+				</div>
+			</div>
+			<%
+			}
+			} else {
+			out.println("There is no products");
+			}
+			%>
+
+		</div>
+	</div>
+	<div class="side-right">
+            <img src="design-image/sideright.jpg" alt="Side Image 1">
+        </div>
+</div>
+                        
+        <script>
+        function showProductsByCategory(category) {
+            if (category === "-1") {
+                window.location.href = 'index.jsp';
+            } else {
+                window.location.href = 'index.jsp?category=' + encodeURIComponent(category);
+            }
+        }
+        </script>
+	<%@include file="/includes/footer.jsp"%>
+</body>
+</html> 
+
+
+addtocartsevlet-----------------------------------------------------
+//package cn.techtutorial.servlet;
+//
+//import java.io.IOException;
+//import java.io.PrintWriter;
+//import java.util.ArrayList;
+//
+//import javax.servlet.ServletException;
+//import javax.servlet.annotation.WebServlet;
+//import javax.servlet.http.HttpServlet;
+//import javax.servlet.http.HttpServletRequest;
+//import javax.servlet.http.HttpServletResponse;
+//import javax.servlet.http.HttpSession;
+//
+//import cn.techtutorial.model.*;
+//
+//
+//@WebServlet(name = "AddToCartServlet", urlPatterns = "/add-to-cart")
+//public class AddToCartServlet extends HttpServlet {
+//	private static final long serialVersionUID = 1L;
+//	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+//	    response.setContentType("text/html;charset=UTF-8");
+// 	
+//	    try (PrintWriter out = response.getWriter()) {
+//	        int id = Integer.parseInt(request.getParameter("id"));
+//	        HttpSession session = request.getSession(); 	
+//	        ArrayList<Cart> cartList = (ArrayList<Cart>) session.getAttribute("cart-list");
+//
+//	        if (cartList == null) {
+//	            // Nếu giỏ hàng chưa tồn tại, tạo mới và thêm sản phẩm vào
+//	            cartList = new ArrayList<>();
+//	            Cart cm = new Cart();
+//	            cm.setId(id);
+//	            cm.setQuantity(1);
+//	            cartList.add(cm);
+//	            session.setAttribute("cart-list", cartList);
+//	        } else {
+//	            // Nếu giỏ hàng đã tồn tại, kiểm tra sản phẩm
+//	            boolean productExists = false;
+//
+//	            for (Cart c : cartList) {
+//	                if (c.getId() == id) {
+//	                    // Nếu sản phẩm đã tồn tại, tăng số lượng lên 1
+//	                    c.setQuantity(c.getQuantity() + 1);
+//	                    productExists = true;
+//	                    break;
+//	                }
+//	            }
+//
+//	            if (!productExists) {
+//	                Cart cm = new Cart();
+//	                cm.setId(id);
+//	                cm.setQuantity(1);
+//	                cartList.add(cm);
+//	            }
+//
+//	            session.setAttribute("cart-list", cartList);
+//	        }
+//
+//	        response.sendRedirect("index.jsp");
+//	    }
+//	}
+	
+//	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+//		response.setContentType("text/html;charset=UTF-8");
+//
+//        try (PrintWriter out = response.getWriter()) {
+////        	out.print("add to cart servlet");
+//
+//            ArrayList<Cart> cartList = new ArrayList<>();
+//            int id = Integer.parseInt(request.getParameter("id"));
+//            Cart cm = new Cart();
+//            cm.setId(id);
+//            cm.setQuantity(1);
+//            HttpSession session = request.getSession();
+//            ArrayList<Cart> cart_list = (ArrayList<Cart>) session.getAttribute("cart-list");
+//            if (cart_list == null) {
+//                cartList.add(cm);
+//                session.setAttribute("cart-list", cartList);
+//                response.sendRedirect("index.jsp");
+//            } else {
+//                cartList = cart_list;
+//
+//                boolean exist = false;
+//                for (Cart c : cart_list) {
+//                    if (c.getId() == id) {
+//                        exist = true;
+//                        out.println("<h3 style='color:crimson; text-align: center'>Item Already in Cart. <a href='cart.jsp'>GO to Cart Page</a></h3>");
+//                    }
+//                }
+//
+//                if (!exist) {
+//                    cartList.add(cm);
+//                    response.sendRedirect("index.jsp");
+//                }
+//            }
+//        }
+//	}
+
+}
+
+
+order--------------------------
+<%@page import="java.text.DecimalFormat"%>
+<%@page import="cn.techtutorial.dao.OrderDao"%>
+<%@page import="cn.techtutorial.connection.DbCon"%>
+<%@page import="cn.techtutorial.dao.ProductDao"%>
+<%@page import="cn.techtutorial.model.*"%>
+<%@page import="java.util.*"%>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+	pageEncoding="ISO-8859-1"%>
+<%
+DecimalFormat dcf = new DecimalFormat("#.##");
+request.setAttribute("dcf", dcf);
+User auth = (User) request.getSession().getAttribute("auth");
+List<Order> orders = null;
+if (auth != null) {
+    request.setAttribute("person", auth);
+    OrderDao orderDao  = new OrderDao(DbCon.getConnection());
+	orders = orderDao.userOrders(auth.getId());
+}else{
+	response.sendRedirect("login.jsp");
+}
+ArrayList<Cart> cart_list = (ArrayList<Cart>) session.getAttribute("cart-list");\
+if (cart_list != null) {
+	request.setAttribute("cart_list", cart_list);
+}
+
+%>
+<!DOCTYPE html>
+<html>
+<head>
+<%@include file="/includes/head.jsp"%>
+<title>Fruitopia</title>
+</head>
+<body>
+	<%@include file="/includes/navbar.jsp"%>
+	<div class="container">
+		<div class="card-header my-3">All Orders</div>
+		<table class="table table-light">
+			<thead>
+				<tr>
+					<th scope="col">Date</th>
+					<th scope="col">Name</th>
+					<th scope="col">Category</th>
+					<th scope="col">Quantity</th>
+					<th scope="col">Price</th>
+					<th scope="col">Cancel</th>
+				</tr>
+			</thead>
+			<tbody>
+			
+			<%
+			if(orders != null){
+				for(Order o:orders){%>
+					<tr>
+						<td><%=o.getDate() %></td>
+						<td><%=o.getName() %></td>
+						<td><%=o.getCategory() %></td>
+						<td><%=o.getQunatity() %></td>
+						<td><%=dcf.format(o.getPrice()) %></td>
+						<td><a class="btn btn-sm btn-danger" href="cancel-order?id=<%=o.getOrderId()%>">Cancel Order</a></td>
+					</tr>
+				<%}
+			}
+			%>
+			
+			</tbody>
+		</table>
+	</div>
+	<%@include file="/includes/footer.jsp"%>
+</body>
+</html>
+addproduct------------------------------------------------------
+package cn.techtutorial.servlet;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import cn.techtutorial.model.Product;
+import cn.techtutorial.dao.ProductDao;
+import cn.techtutorial.connection.DbCon;
+import javax.servlet.http.Part;
+
+@WebServlet("/AddProductServlet")
+public class AddProductServlet extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+    
+    protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    	response.setContentType("text/html;charset=UTF-8");
+    	try (PrintWriter out = response.getWriter()){
+    		out.println("<!DOCTYPE html>");
+    		out.println("<html>");
+    		out.println("<head>");
+    		out.println("<title>Add Product</title>");
+    		out.println("</head>");
+    		out.println("<body>");
+    		String pname = request.getParameter("pname");
+    		String pcat = request.getParameter("pcat");
+    		Double price = Double.parseDouble(request.getParameter("price"));
+//    		String image = request.getParameter("image");
+    		Part filePart = request.getPart("image");
+    		String fileName = getSubmittedFileName(filePart);
+
+    		// Giữ lại các dòng code khác không thay đổi
+    		Product product = new Product(pname, pcat, price, fileName);
+
+//    		Product product = new Product(pname,pcat,price,image);
+    		try{
+                ProductDao pdao = new ProductDao(DbCon.getConnection());
+                if(pdao.addProduct(product)){
+                    response.sendRedirect("ProductManager.jsp");
+                }else{
+                    out.print("wrong cre3dential");
+                }
+                
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+    		out.println("</body>");
+    		out.println("</html>");
+    		
+    	}
+    }
+    
+    private String getSubmittedFileName(Part part) {
+        for (String cd : part.getHeader("content-disposition").split(";")) {
+            if (cd.trim().startsWith("filename")) {
+                String fileName = cd.substring(cd.indexOf('=') + 1).trim().replace("\"", "");
+                return fileName.substring(fileName.lastIndexOf('/') + 1)
+                               .substring(fileName.lastIndexOf('\\') + 1);
+            }
+        }
+        return null;
+    }
+
+    
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		
+		response.setContentType("text/html;charset=UTF-8");
+    	try (PrintWriter out = response.getWriter()){
+    		out.println("<!DOCTYPE html>");
+    		out.println("<html>");
+    		out.println("<head>");
+    		out.println("<title>Add Product</title>");
+    		out.println("</head>");
+    		out.println("<body>");
+    		String pname = request.getParameter("pname");
+    		String pcat = request.getParameter("pcat");
+    		Double price = Double.parseDouble(request.getParameter("price"));
+    		String image = request.getParameter("image");
+    		Product product = new Product(pname,pcat,price,image);
+    		try{
+                ProductDao pdao = new ProductDao(DbCon.getConnection());
+                if(pdao.addProduct(product)){
+                    response.sendRedirect("ProductManager.jsp");
+                }else{
+                    out.print("wrong cre3dential");
+                }
+                
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+    		out.println("</body>");
+    		out.println("</html>");
+    		
+    	}
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	}
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		doGet(request, response);
+	}
+
+}
